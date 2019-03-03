@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 from model_embeddings import ModelEmbeddings
 
 class SentenceEncoder(nn.Module):
-    def __init__(self, word_embed_size, hidden_size, vocab, sent_dropout_rate=0.3):
+    def __init__(self, word_embed_size, hidden_size, sent_dropout_rate=0.3):
         """
         @param word_emb_size (int)
         @param hidden_size (int): size of the output of a forward/backard GRU
@@ -15,7 +15,7 @@ class SentenceEncoder(nn.Module):
         @param sent_dropout_rate (float): Dropout probability
         """
         super(SentenceEncoder, self).__init__()
-        self.vocab = vocab
+#         self.vocab = vocab
         self.model_embeddings = ModelEmbeddings(word_embed_size, vocab)
         self.sent_encoder = nn.GRU(word_embed_size, hidden_size, num_layers=1, bidirectional=True)
         self.sent_dropout = nn.Dropout(sent_dropout_rate)
