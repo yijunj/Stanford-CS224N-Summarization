@@ -37,7 +37,7 @@ class NeuSum(nn.Module):
         input_idx = self.vocab.to_input_tensor(input, device=torch.device('cpu')) # shape: (batch_size, doc_len, src_len)
         batch_size, doc_len, src_len = input_idx.size()
 
-        # TODO: flatten the input_idx to source_padded (src_len, batch_size*doc_len)
+        # flatten the input_idx to source_padded (src_len, batch_size*doc_len)
         input_idx = input_idx.permute(2, 0, 1) # (src_len, batch_size, doc_len)
         source_padded = input_idx.contiguous().view(src_len, -1) # shape: (src_len, batch_size*doc_len)
         # later just take every doc_len
@@ -45,7 +45,7 @@ class NeuSum(nn.Module):
         # sent_enc has shape: (batch_size*doc_len, hidden_size*2)
         sent_enc = self.sentence_encoder(source_padded, [src_len]*source_padded.size()[1])
 
-        # TODO: transform sent_enc (batch_size*doc_len, hidden_size*2) to doc_padded (doc_len, batch_size, hidden_size*2)
+        # transform sent_enc (batch_size*doc_len, hidden_size*2) to doc_padded (doc_len, batch_size, hidden_size*2)
         doc_padded = sent_enc.contiguous().view(batch_size, doc_len, -1).permute(1, 0, 2)# shape: (doc_len, batch_size, sent_embed_size)
 
         # document-level encoder
