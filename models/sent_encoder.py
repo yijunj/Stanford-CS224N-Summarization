@@ -11,7 +11,6 @@ class SentenceEncoder(nn.Module):
         """
         @param word_emb_size (int)
         @param hidden_size (int): size of the output of a forward/backard GRU
-        @param vocab (Vocab): Vocabulary object
         @param sent_dropout_rate (float): Dropout probability
         """
         super(SentenceEncoder, self).__init__()
