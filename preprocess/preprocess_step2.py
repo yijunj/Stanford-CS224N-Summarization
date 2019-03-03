@@ -2,8 +2,10 @@ import pickle
 import re
 
 # First step: clean up documents and break each document into sentences
+### This is done in preprocess_step1.py
 
 # Second step: break each sentence into words
+### This is done here in this file
 
 with open('newsroom_train_99844_sent_lvl.p', 'rb') as pickle_file:
     data = pickle.load(pickle_file)
@@ -42,5 +44,4 @@ with open('newsroom_train_100000_word_lvl.p', 'wb') as pickle_file:
     pickle.dump((summaries_word_lvl, documents_word_lvl), pickle_file)
 
 # Third step: pad mini-batches of sentences and documents
-
-# Fourth step: for each sentence, get a list of word embeddings
+### This is done in vocab.to_input_tensor()
