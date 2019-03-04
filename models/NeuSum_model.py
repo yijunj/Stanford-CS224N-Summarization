@@ -52,3 +52,5 @@ class NeuSum(nn.Module):
         sent_enc_doc = self.document_encoder(doc_padded, [doc_len]*doc_padded.size()[1]) # shape: (batch_size, doc_len, sent_hidden_size*2)
 
         return sent_enc_doc
+
+    # def score_selection(self, sent_enc_doc):
