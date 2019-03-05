@@ -1,2 +1,6 @@
 /thin
 /processed_train
+/Embedding
+*.p
+*.png
+

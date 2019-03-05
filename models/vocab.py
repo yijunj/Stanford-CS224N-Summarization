@@ -16,7 +16,6 @@ from itertools import chain
 import json
 import torch
 from typing import List
-from utils import read_corpus, pad_sents
 
 
 class Vocab(object):

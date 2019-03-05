@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from typing import List, Tuple, Dict, Set, Union
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
+
 class DocumentEncoder(nn.Module):
     def __init__(self, hidden_size, sent_hidden_size, doc_dropout_rate=0.3):
         """
