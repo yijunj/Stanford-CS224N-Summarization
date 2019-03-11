@@ -25,35 +25,22 @@ class SentenceEncoder(nn.Module):
 
     def forward(self, source_padded: torch.Tensor, source_lengths: List[int]) -> torch.Tensor:
         """
-<<<<<<< Updated upstream
-        !!!!!!!!!!!!!!!TODO: sort the source_padded in order of longest to shortest sentence!!!!!!!!!!!!!!!!!
+         TODO: sort the source_padded in order of longest to shortest sentence!!!!!!!!!!!!!!!!!
         @param source_padded (Tensor): indices of words, shape (src_len, b). Note that these have already been sorted in order of longest to shortest sentence.
-=======
         # src len = sentence length
         # batch size = total number of sentences over all the documents...num_documents x num_sentences per documents.
         @param source_padded (Tensor): Tensor of padded source sentences with shape (src_len, b, word_embed_size), where
                                         b = batch_size, src_len = maximum source sentence length. Note that
                                        these have already been sorted in order of longest to shortest sentence.
->>>>>>> Stashed changes
-        @param source_lengths (List[int]): List of actual lengths for each of the source sentences in the batch
-        @returns sent_enc (Tensor): Tensor of encoded sentences with shape (batch_size, hidden_size*2)
         """
-<<<<<<< Updated upstream
         # source_idx = self.vocab(source_padded) # word idx
         X = self.model_embeddings.source(source_padded) # shape: (src_len, b, word_embed_size)
         X_packed = pack_padded_sequence(X, source_lengths)
-=======
-        # X = self.vocab(source_padded)
-        # X = self.model_embeddings.source(source_padded)
 
         #pack padded for what...
-        X_packed = pack_padded_sequence(source_padded, source_lengths)
-        print(X_packed)
->>>>>>> Stashed changes
+        #X_packed = pack_padded_sequence(source_padded, source_lengths)
+        #print(X_packed)
         outputs, sent_enc_hiddens = self.sent_encoder(X_packed)
-        print(sent_enc_hiddens.shape)
-        #sent_enc_hiddens has shape (num_layers * num_directions, batch, hidden_size), outputs has shape (seq_len, batch, num_directions * hidden_size):
-        # print(sent_enc_hiddens.size())
 
         ## doing this removes one dimension
         sent_enc = torch.cat( (sent_enc_hiddens[0,:], sent_enc_hiddens[1,:]), dim=1 ) #concatenate the hidden states from forward and backward GRUs
