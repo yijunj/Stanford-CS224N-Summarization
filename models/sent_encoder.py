@@ -37,11 +37,11 @@ class SentenceEncoder(nn.Module):
         """
         # source_idx = self.vocab(source_padded) # word idx
         X = self.model_embeddings.source(source_padded) # shape: (src_len, b)
-        print(X.shape)
+        #print(X.shape)
 
         #
         X_packed = pack_padded_sequence(X, source_lengths, batch_first = False); # if batch_first = False, batch size must be 2nd argument
-        print(X_packed)
+        #print(X_packed)
         #pack padded for what...
         #X_packed = pack_padded_sequence(source_padded, source_lengths)
         #print(X_packed)

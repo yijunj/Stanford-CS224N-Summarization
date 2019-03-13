@@ -29,8 +29,11 @@ gold_sents_indices = torch.tensor([[1,2], [0,1]], device=device)
 
 P = pred_dist(sents_scores)
 Q = label_dist(sents_scores, pred_sents_indices, gold_sents_indices, doc_indices, vocab, device)
+
 loss = KL(P, Q)
 
 print('P has shape:', P.size())
 print('Q has shape:', Q.size())
 print('KL loss is:', loss)
+print(P)
+print(Q)

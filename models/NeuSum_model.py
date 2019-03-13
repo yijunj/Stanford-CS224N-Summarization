@@ -54,7 +54,7 @@ class NeuSum(nn.Module):
         input_idx = input_idx.permute(0,2,1) # (2,0,1) = (src_len, batch_size, doc_len)
         source_padded = input_idx.contiguous().view(self.src_len, -1) # shape: (src_len, batch_size*doc_len)
         # later just take every doc_len
-        print(source_padded.shape)
+        #print(source_padded.shape)
 
         # sent_enc has shape: (batch_size*doc_len, hidden_size*2)
         sent_enc = self.sentence_encoder(source_padded, [self.src_len]*source_padded.size()[1])
