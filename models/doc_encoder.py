@@ -23,7 +23,7 @@ class DocumentEncoder(nn.Module):
         @param doc_lengths (List[int]):  List of actual lengths for each of the documents in the batch
         @returns sent_enc_doc (Tensor): Tensor of hidden units with shape (batch_size, doc_len, sent_hidden_size*2)
         """
-        X_packed = pack_padded_sequence(doc_padded, doc_lengths)
+        X_packed = pack_padded_sequence(doc_padded, doc_lengths, batch_first = True)
         outputs, sent_enc_doc_hiddens = self.doc_encoder(X_packed) # now outputs has the shape (seq_len, batch, num_directions * hidden_size)
         outputs = pad_packed_sequence(outputs)[0].permute([1,0,2]) # now outputs has the shape (batch, seq_len, num_directions * hidden_size)
         sent_enc_doc = self.doc_dropout(outputs)

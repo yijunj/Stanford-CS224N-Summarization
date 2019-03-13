@@ -4,8 +4,8 @@ import torch.nn.functional as F
 from typing import List, Tuple, Dict, Set, Union
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
-from sent_encoder import SentenceEncoder
-from doc_encoder import DocumentEncoder
+from models.sent_encoder import SentenceEncoder
+from models.doc_encoder import DocumentEncoder
 
 class NeuSum(nn.Module):
     def __init__(self, word_embed_size, hidden_size, sent_hidden_size, extract_hidden_size, vocab, device, sent_dropout_rate=0.3, doc_dropout_rate=0.2, max_t_step = 3, attn_size = 512):
@@ -50,10 +50,11 @@ class NeuSum(nn.Module):
         input_idx = self.vocab.to_input_tensor(input, device=torch.device('cpu')) # shape: (batch_size, doc_len, src_len)
         self.batch_size, self.doc_len, self.src_len = input_idx.size()
 
-        # flatten the input_idx to source_padded (src_len, batch_size*doc_len)
-        input_idx = input_idx.permute(2, 0, 1) # (src_len, batch_size, doc_len)
+        # flatten the input_idx to source_padded (src_len, batch_size*doc_len) ....
+        input_idx = input_idx.permute(0,2,1) # (2,0,1) = (src_len, batch_size, doc_len)
         source_padded = input_idx.contiguous().view(self.src_len, -1) # shape: (src_len, batch_size*doc_len)
         # later just take every doc_len
+        print(source_padded.shape)
 
         # sent_enc has shape: (batch_size*doc_len, hidden_size*2)
         sent_enc = self.sentence_encoder(source_padded, [self.src_len]*source_padded.size()[1])
@@ -124,6 +125,7 @@ class NeuSum(nn.Module):
         return sents_scores, sents_selected
 
     def forward(self, input):
+        ''' sents scores and sents selected'''
         sent_enc_doc = self.encode(input)
         sents_scores, sents_selected = self.score_selection(sent_enc_doc)
         # print(sent_enc_doc.size()) #shape (batch_size, doc_len, sent_hidden_size*2)

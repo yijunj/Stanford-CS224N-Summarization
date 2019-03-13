@@ -1,0 +1,18 @@
+{
+  "word2id": {
+    "<pad>": 0,
+    "<unk>": 1,
+    "response": 2,
+    "human": 3,
+    "interface": 4,
+    "time": 5,
+    "trees": 6,
+    "graph": 7,
+    "user": 8,
+    "system": 9,
+    "eps": 10,
+    "minor": 11,
+    "computer": 12,
+    "survey": 13
+  }
+}

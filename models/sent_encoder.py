@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import List, Tuple, Dict, Set, Union
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
-
+from models.model_embeddings import *
 '''
 does not look like vocab is explicitly used
 
@@ -20,6 +20,8 @@ class SentenceEncoder(nn.Module):
         super(SentenceEncoder, self).__init__()
         # self.vocab = vocab
         self.model_embeddings = ModelEmbeddings(word_embed_size, vocab)
+
+        ## input to gru must be:
         self.sent_encoder = nn.GRU(word_embed_size, hidden_size, num_layers=1, bidirectional=True)
         self.sent_dropout = nn.Dropout(sent_dropout_rate)
 
@@ -34,9 +36,12 @@ class SentenceEncoder(nn.Module):
                                        these have already been sorted in order of longest to shortest sentence.
         """
         # source_idx = self.vocab(source_padded) # word idx
-        X = self.model_embeddings.source(source_padded) # shape: (src_len, b, word_embed_size)
-        X_packed = pack_padded_sequence(X, source_lengths)
+        X = self.model_embeddings.source(source_padded) # shape: (src_len, b)
+        print(X.shape)
 
+        #
+        X_packed = pack_padded_sequence(X, source_lengths, batch_first = False); # if batch_first = False, batch size must be 2nd argument
+        print(X_packed)
         #pack padded for what...
         #X_packed = pack_padded_sequence(source_padded, source_lengths)
         #print(X_packed)
