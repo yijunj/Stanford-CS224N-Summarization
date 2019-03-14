@@ -103,7 +103,8 @@ class NeuSum(nn.Module):
             score_t = score_flat.contiguous().view(self.batch_size, self.doc_len) # (batch_size, doc_len)
             if sents_selected:
                 mask = self.create_score_mask(sents_selected) # shape (batch_size, doc_len)
-                score_t.masked_fill_(mask, -float('inf')) # turn scores of selected sentences to -inf
+                # score_t.masked_fill_(mask, -float('inf')) # turn scores of selected sentences to -inf
+                score_t.masked_fill_(mask, float(-1000000)) # turn scores of selected sentences to -1000000
             sent_selected_t = torch.argmax(score_t, dim=1) #shape (batch_size, ). Selected sentences at time step t
             sents_selected.append(sent_selected_t)
             sents_scores.append(score_t)
