@@ -82,9 +82,18 @@ def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device):
     for batch in range(batch_size):
         doc = docs[batch]
         reference = torch.index_select(doc, 0, gold_sents_indices[batch])
-        reference = reference.view(-1).tolist() # Flatten out sentences into one list
-        reference = list(filter(lambda x: x!=vocab['<pad>'], reference)) # Remove pad tokens
-        reference = [reference] # rouge_n can take in multiple references
+        #print(reference)
+        ref = reference.view(-1);
+
+        #reference = reference.view(-1).tolist() # Flatten out sentences into one list
+        mask = torch.tensor([0 if x ==vocab['<pad>'] else 1 for x in ref.tolist()]);
+        ref = ref*mask;
+        ref = ref[ref.nonzero()].view(-1);
+        #print('new ref: ' +str(ref))
+        #print(reference, vocab['<pad>'])
+        #reference = list(filter(lambda x: x!=vocab['<pad>'], reference)) # Remove pad tokens
+        #print(reference)
+        reference = [ref] # rouge_n can take in multiple references
 
         r_list = []
         for i in range(num_choices_of_summary):
