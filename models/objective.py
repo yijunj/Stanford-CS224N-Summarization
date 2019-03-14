@@ -14,9 +14,12 @@ def pred_dist(sents_scores):
     @param sents_scores (Tensor): sentence scores of every time step
         Shape (batch_size, T, doc_len) where T=3 is the total number of time steps
     """
-    P = torch.softmax(sents_scores, dim=2) # Shape (batch_size, T, doc_len)
+
+    P = torch.softmax(sents_scores, dim=2) # Shape (batch_size, T, doc_len) #softmax over doc len?
+    logP = torch.log_softmax(sents_scores, dim = 2);
     P = P.permute(2,0,1) # Shape (doc_len, batch_size, T)
-    return P
+    logP = logP.permute(2,0,1);
+    return P, logP;
 
 def label_dist(sents_scores, pred_sents_indices, gold_sents_indices, docs, vocab, device, temperature=20):
     """
@@ -33,9 +36,16 @@ def label_dist(sents_scores, pred_sents_indices, gold_sents_indices, docs, vocab
     Q_list = []
     for t in range(T):
         tminus1_pred_sents_indices = pred_sents_indices[:,:t] # Shape (batch_size, t)
-
-        t_pred_sents_indices = [[tminus1_pred_sents_indices.tolist()[b] + [i] for i in range(doc_len)] for b in range(batch_size)]
-        t_pred_sents_indices = torch.tensor(t_pred_sents_indices, device=device) # Shape (batch_size, doc_len, t+1)
+        # print(tminus1_pred_sents_indices.shape, batch_size)
+        # print('tolist: ' + str(tminus1_pred_sents_indices.tolist()))
+        # t_pred_sents_indices = [[tminus1_pred_sents_indices.tolist()[b] + [i] for i in range(doc_len)] for b in range(batch_size)]
+        # t_pred_sents_indices = torch.tensor(t_pred_sents_indices, device=device) # Shape (batch_size, doc_len, t+1)
+        # print(t_pred_sents_indices)
+        concat = torch.tensor(list(range(doc_len))).view(doc_len,-1);
+        t_pred_sents_indices = [torch.cat([tminus1_pred_sents_indices[b,:].repeat(doc_len,1), concat], dim = 1) for b in range(batch_size)]
+        #print(t_pred_sents_indices)
+        t_pred_sents_indices = torch.cat(t_pred_sents_indices, dim = 0).view(batch_size, doc_len, t+1) # Shape (batch_size, doc_len, t+1)
+        #print(t_pred_sents_indices)
 
         rouge_t = rouge(t_pred_sents_indices, gold_sents_indices, docs, vocab, device) # Rouge scores of shape (batch_size, doc_len)
 
@@ -44,6 +54,7 @@ def label_dist(sents_scores, pred_sents_indices, gold_sents_indices, docs, vocab
             g = rouge_t - rouge_tminus1 # Rouge score differences of shape (batch_size, doc_len)
         else:
             g = rouge_t
+
         g_min = g.min(dim=1, keepdim=True)[0]
         g_max = g.max(dim=1, keepdim=True)[0]
         g_t = (g - g_min) / (g_max - g_min)
@@ -98,7 +109,9 @@ def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device):
 def KL(P, Q):
     """
     Calculate KL divergence loss between predicted distribution P and labeled distribution Q
+    NOTE THAT P has to be log(probs) and Q is just raw probabilities
     """
+
     return torch.nn.KLDivLoss(reduction='sum')(P, Q)
 
 def neusum_loss(sents_scores, pred_sents_indices, gold_sents_indices, doc_indices, vocab, device):
@@ -109,7 +122,7 @@ def neusum_loss(sents_scores, pred_sents_indices, gold_sents_indices, doc_indice
     :param doc_indices: from doc_indices = vocab.to_input_tensor(documents, device)
     :return:
     '''
-    P = pred_dist(sents_scores)
+    P, logP = pred_dist(sents_scores)
     Q = label_dist(sents_scores, pred_sents_indices, gold_sents_indices, doc_indices, vocab, device)
-    loss = KL(P, Q)
-    return loss;
+    loss = KL(logP, Q)
+    return loss, (logP, P,Q);

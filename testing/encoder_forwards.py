@@ -8,12 +8,6 @@ import torch.optim as optim
 from torchtext.datasets import TranslationDataset, Multi30k
 from torchtext.data import Field, BucketIterator
 
-import spacy
-import numpy as np
-import random
-import math
-import os
-import time
 import pickle
 from models.vocab import *
 
