@@ -41,13 +41,20 @@ def label_dist(sents_scores, pred_sents_indices, gold_sents_indices, docs, vocab
         # t_pred_sents_indices = [[tminus1_pred_sents_indices.tolist()[b] + [i] for i in range(doc_len)] for b in range(batch_size)]
         # t_pred_sents_indices = torch.tensor(t_pred_sents_indices, device=device) # Shape (batch_size, doc_len, t+1)
         # print(t_pred_sents_indices)
-        concat = torch.tensor(list(range(doc_len))).view(doc_len,-1);
+        concat = torch.tensor(list(range(doc_len)), device = device).contiguous().view(doc_len,-1)
         t_pred_sents_indices = [torch.cat([tminus1_pred_sents_indices[b,:].repeat(doc_len,1), concat], dim = 1) for b in range(batch_size)]
+        # t_pred_sents_indices_temp = []
+        # for b in range(batch_size):
+        #     t_pred_sents_indices_temp.append(torch.cat([tminus1_pred_sents_indices[b,:].repeat(doc_len,1), concat], dim = 1))
+
         #print(t_pred_sents_indices)
-        t_pred_sents_indices = torch.cat(t_pred_sents_indices, dim = 0).view(batch_size, doc_len, t+1) # Shape (batch_size, doc_len, t+1)
+        t_pred_sents_indices = torch.cat(t_pred_sents_indices, dim = 0).contiguous().view(batch_size, doc_len, t+1) # Shape (batch_size, doc_len, t+1)
         #print(t_pred_sents_indices)
 
         rouge_t = rouge(t_pred_sents_indices, gold_sents_indices, docs, vocab, device) # Rouge scores of shape (batch_size, doc_len)
+
+        # print('t_pred_sents_indices is', t_pred_sents_indices)
+        # print('gold_sents_indices is', gold_sents_indices)
 
         if t > 0:
             rouge_tminus1 = rouge(tminus1_pred_sents_indices.view(batch_size, 1, t), gold_sents_indices, docs, vocab, device) # Rouge scores of shape (batch_size, 1)
@@ -93,7 +100,7 @@ def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device):
         #print(reference, vocab['<pad>'])
         #reference = list(filter(lambda x: x!=vocab['<pad>'], reference)) # Remove pad tokens
         #print(reference)
-        reference = [ref] # rouge_n can take in multiple references
+        reference = [ref.tolist()] # rouge_n can take in multiple references
 
         r_list = []
         for i in range(num_choices_of_summary):
@@ -134,4 +141,4 @@ def neusum_loss(sents_scores, pred_sents_indices, gold_sents_indices, doc_indice
     P, logP = pred_dist(sents_scores)
     Q = label_dist(sents_scores, pred_sents_indices, gold_sents_indices, doc_indices, vocab, device)
     loss = KL(logP, Q)
-    return loss, (logP, P,Q);
+    return loss, (logP, P, Q)
