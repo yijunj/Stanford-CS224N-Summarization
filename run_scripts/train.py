@@ -26,17 +26,20 @@ with open('../dataset/newsroom_train_10_word_lvl.p', 'rb') as pickle_file:
 
 summaries = data[0]
 documents = data[1]
-# print(summaries)
-# print(documents)
+print(summaries)
+print(documents)
 
 vocab = Vocab.load('../dataset/newsroom_train_99844_vocab.json')
+
 device = torch.device('cpu')
+device = torch.device('cuda:0')
+
 # print('use device: %s' % device, file=sys.stderr)
 
 ## doc indices...for each document, put out the indices for word2vec of every sentence.
 doc_indices = vocab.to_input_tensor(documents, device)
 # print(doc_indices)
-
+print('number of docs: %d' % len(documents))
 
 batch_size, doc_len, _ = doc_indices.size()
 print('batch_size: %d, doc_len: %d' %(batch_size, doc_len))

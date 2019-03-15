@@ -47,7 +47,7 @@ class NeuSum(nn.Module):
         @returns sent_enc_doc (Tensor): encoded sentences on doc-level, shape (batch_size, doc_len, sent_hidden_size*2)
         """
         # turn input to a Tensor: idx of words and padded on both sentence and document levels
-        input_idx = self.vocab.to_input_tensor(input, device=torch.device('cpu')) # shape: (batch_size, doc_len, src_len)
+        input_idx = self.vocab.to_input_tensor(input, device = self.device) # shape: (batch_size, doc_len, src_len)
         self.batch_size, self.doc_len, self.src_len = input_idx.size()
 
         # flatten the input_idx to source_padded (src_len, batch_size*doc_len) ....
@@ -94,7 +94,7 @@ class NeuSum(nn.Module):
         sents_selected = [] # 'S0' in pdf
         sents_scores = []
         sent_selected_t = None
-        s_prev = torch.zeros(self.batch_size*self.doc_len, self.sent_hidden_size*2) # 's0' in pdf
+        s_prev = torch.zeros(self.batch_size*self.doc_len, self.sent_hidden_size*2, device = self.device) # 's0' in pdf
         sent_enc_doc_flat = sent_enc_doc.contiguous().view(-1, self.sent_hidden_size*2) # shape (batch_size*doc_len, extract_hidden_size)
         for t in range(self.max_t_step):
             h_next = self.ht_gru(s_prev, h_prev) # shape (batch_size*doc_len, extract_hidden_size)

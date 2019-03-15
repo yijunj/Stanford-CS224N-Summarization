@@ -93,7 +93,7 @@ def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device):
         ref = reference.view(-1);
 
         #reference = reference.view(-1).tolist() # Flatten out sentences into one list
-        mask = torch.tensor([0 if x ==vocab['<pad>'] else 1 for x in ref.tolist()]);
+        mask = torch.tensor([0 if x ==vocab['<pad>'] else 1 for x in ref.tolist()]).cuda();
         ref = ref*mask;
         ref = ref[ref.nonzero()].view(-1);
         #print('new ref: ' +str(ref))
