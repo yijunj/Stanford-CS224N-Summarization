@@ -59,7 +59,7 @@ def bestSummary_individual(sent_list, ref_summary, cmax = 10):
             best_inds = ind;
     return best_summary, best_rouge, best_inds;
 
-def bestSummary_iterative(sent_list, ref_summary, cmax = 10):
+def bestSummary_iterative(sent_list, ref_summary, cmax = 10, max_probe_length = 50, max_summary_length  =3):
     '''
     iteratively tries the best sentences.
     :param sent_list:
@@ -74,10 +74,11 @@ def bestSummary_iterative(sent_list, ref_summary, cmax = 10):
 
     #termination condition: if we can't improve the score adding in the ith sentence
     cur_best = [];
-    max_probe_length = 50;
     for i in range(1, cmax+1):
         best_ind = -1;
+        best_rouge = 0; ## need to get three
         for j in range(0, min(max_probe_length, len(sent_list))):
+            if(j in best_inds): continue; #no duplicates
             new_sum = ' '.join(cur_best+[sent_list[j]]);
             score = rouge.get_scores(new_sum, ref_summary)[0]['rouge-1']['f'];
             if(score>best_rouge):
@@ -86,7 +87,9 @@ def bestSummary_iterative(sent_list, ref_summary, cmax = 10):
         if(best_ind!= -1):
             cur_best.append(sent_list[best_ind]);
             best_inds.append(best_ind);
-        else:
+        if(len(best_inds) == max_summary_length):
             break;
+        # else:
+        #     break;
     #best_summary = ' '.join(cur_best);
     return cur_best, best_rouge, best_inds;

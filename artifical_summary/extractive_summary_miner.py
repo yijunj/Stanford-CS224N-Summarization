@@ -7,15 +7,17 @@ import matplotlib.pyplot as plt
 from artifical_summary.sentence_combination import *
 from collections import Counter
 sys.path.append("D:\Documents\Classes\CS224n\project")
-
+dir = "D:\Documents\Classes\CS224n\project"
 rouge = Rouge()
 
 ## cycle through articles
 
-data = "../processed_train/newsroom_train_99844_clean.p";
+data = os.path.join(dir, "processed_train/newsroom_train_99844_word_lvl.p");
 (summaries, texts) = pickle.load(open(data, 'rb'));
 print(len(texts))
 print(len(summaries))
+
+
 
 rouge_data = [];
 sentence_lengths = [];
@@ -25,22 +27,32 @@ ind_distribution= [];
 extractive_summaries = [];
 preserved_texts = []; preserved_summaries = [];
 extractive_golden_inds = []
+max_probe_length = 20
 for c in range(len(summaries)):
 
-    if(c%500 == 1):
+    if(c%100 == 1):
         print('processed %d samples' % c)
         print(np.mean([len(s) for s in preserved_summaries]))
         print(np.mean(enhanced_rouge))
     # if(c == 2000):
     #     break;
-    if((c+1)%10000 == 0):
+    if((c+1)%500 == 0):
         pickle.dump((preserved_summaries, preserved_texts, extractive_summaries, extractive_golden_inds),
                     open('extraction_summaries_%d.p' % len(extractive_summaries), 'wb'))
 
     text = texts[c]; summary = summaries[c];
     if(len(text) <= 1):
         continue;
-    first3Sentences = ' '.join(text[0:num_sents_summary])
+
+    ## =====================USE THESE FOR SENTENCE LEVEL PROCESSING =====================================##
+    summary = ' '.join(summary);
+    ## summaries come as list[list[list[str]]]
+    first3Sentences = text[0:num_sents_summary];
+    #list of strings
+    text_as_list_of_strings = [' '.join(i) for i in text]
+    first3Sentences = '. '.join([' '.join(i) for i in first3Sentences]);
+
+    #first3Sentences = ' '.join(text[0:num_sents_summary])
     #print(first3Sentences)
     sentence_lengths.append(len(text))
     try:
@@ -50,11 +62,13 @@ for c in range(len(summaries)):
         r2f = scores['rouge-2']['f']
         rouge_data.append([r1f, r2f])
 
-        bs, br, golden_inds = bestSummary_iterative(text, summary)
+        bs, br, golden_inds = bestSummary_iterative(text_as_list_of_strings, summary, max_probe_length = max_probe_length)
+        if(not(golden_inds) or len(golden_inds) != num_sents_summary):
+            continue;
         enhanced_rouge.append(br)
         ind_distribution += list(golden_inds);
         extractive_summaries.append(bs);
-        preserved_texts.append(text);
+        preserved_texts.append(text[0:max_probe_length]);
         preserved_summaries.append(summary)
         extractive_golden_inds.append(golden_inds)
     except Exception as e:
