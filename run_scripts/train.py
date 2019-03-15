@@ -3,7 +3,7 @@ sys.path.append('/Users/yiliu/Desktop/CS224N/final_project/scripts')
 
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from torchtext.datasets import TranslationDataset, Multi30k
+#from torchtext.datasets import TranslationDataset, Multi30k
 from torchtext.data import Field, BucketIterator
 import random
 import time

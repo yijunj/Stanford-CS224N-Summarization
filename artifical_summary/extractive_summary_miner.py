@@ -35,7 +35,7 @@ for c in range(len(summaries)):
     #     break;
     if((c+1)%10000 == 0):
         pickle.dump((preserved_summaries, preserved_texts, extractive_summaries, extractive_golden_inds),
-                    open('algorithmic_extraction_summaries_%d.p' % len(extractive_summaries), 'wb'))
+                    open('extraction_summaries_%d.p' % len(extractive_summaries), 'wb'))
 
     text = texts[c]; summary = summaries[c];
     if(len(text) <= 1):
