@@ -8,7 +8,7 @@ from models.sent_encoder import SentenceEncoder
 from models.doc_encoder import DocumentEncoder
 
 class NeuSum(nn.Module):
-    def __init__(self, word_embed_size, hidden_size, sent_hidden_size, extract_hidden_size, vocab, device, sent_dropout_rate=0.3, doc_dropout_rate=0.2, max_t_step = 3, attn_size = 512):
+    def __init__(self, word_embed_size, hidden_size, sent_hidden_size, extract_hidden_size, vocab, device, sent_dropout_rate=0.3, doc_dropout_rate=0.2, max_t_step = 2, attn_size = 512):
         """
         @param word_embed_size (int): embedding size of a word
         @param hidden_size (int): size of the output of a forward/backard GRU
@@ -96,15 +96,17 @@ class NeuSum(nn.Module):
         sent_selected_t = None
         s_prev = torch.zeros(self.batch_size*self.doc_len, self.sent_hidden_size*2) # 's0' in pdf
         sent_enc_doc_flat = sent_enc_doc.contiguous().view(-1, self.sent_hidden_size*2) # shape (batch_size*doc_len, extract_hidden_size)
-
         for t in range(self.max_t_step):
             h_next = self.ht_gru(s_prev, h_prev) # shape (batch_size*doc_len, extract_hidden_size)
             score_flat = self.score_linear_s( torch.tanh(self.score_linear_q(h_next) + self.score_linear_d(sent_enc_doc_flat)) ) #shape (batch_size*doc_len, )
             score_t = score_flat.contiguous().view(self.batch_size, self.doc_len) # (batch_size, doc_len)
+            score_t_masked = score_t.clone()
+            
             if sents_selected:
                 mask = self.create_score_mask(sents_selected) # shape (batch_size, doc_len)
                 # score_t.masked_fill_(mask, -float('inf')) # turn scores of selected sentences to -inf
-                score_t.masked_fill_(mask, float(-1000000)) # turn scores of selected sentences to -1000000
+                score_t_masked.masked_fill_(mask, float(-1000000)) # turn scores of selected sentences to -1000000
+
             sent_selected_t = torch.argmax(score_t, dim=1) #shape (batch_size, ). Selected sentences at time step t
             sents_selected.append(sent_selected_t)
             sents_scores.append(score_t)
