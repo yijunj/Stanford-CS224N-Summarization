@@ -62,10 +62,10 @@ print('batch_size: %d, doc_len: %d' %(batch_size, doc_len))
 num_docs = len(documents)
 
 ## =============================== NET PARAMETER SPECIFICATIONS ==============================================##
-word_embed_size = 30
-hidden_size = 20
-sent_hidden_size = 2*hidden_size #should be fixed by the sentence encoder right, so it really shouldn't be a free parameter
-extract_hidden_size = 10
+word_embed_size = 30 # 50 (parameter from the paper)
+hidden_size = 20 # 256
+sent_hidden_size = 20 #256
+extract_hidden_size = 10 #256
 
 n_epochs = 500
 
