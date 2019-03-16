@@ -44,6 +44,7 @@ batch_size = 5
 num_epochs = 10000
 print_every_epoch = 10
 save_every_epoch = 100
+rouge_num = 2
 load_model = False
 
 ## ============================== SOME SETTINGS BEFORE TRAINING ============================== ##
@@ -85,7 +86,7 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         select_sent_scores_batch, select_sent_indices_batch, doc_tokens_batch = neusum.forward(docs_batch)
 
-        loss, _ = neusum_loss(select_sent_scores_batch, select_sent_indices_batch, gold_sent_indices_batch, doc_tokens_batch, vocab, device)
+        loss, _ = neusum_loss(select_sent_scores_batch, select_sent_indices_batch, gold_sent_indices_batch, doc_tokens_batch, vocab, device, rouge_num)
         epoch_loss += loss
 
         loss.backward()
