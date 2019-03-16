@@ -16,7 +16,7 @@ def pred_dist(sents_scores):
     """
 
     P = torch.softmax(sents_scores, dim=2) # Shape (batch_size, T, doc_len) #softmax over doc len?
-    logP = torch.log_softmax(sents_scores, dim = 2);
+    logP = torch.log_softmax(sents_scores, dim=2);
     P = P.permute(2,0,1) # Shape (doc_len, batch_size, T)
     logP = logP.permute(2,0,1);
     return P, logP;
@@ -86,11 +86,13 @@ def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device, rouge_num
     batch_size, num_choices_of_summary, _ = pred_sents_indices.size()
     r_list_list = []
 
+    # print(docs.size())
+
     for batch in range(batch_size):
         doc = docs[batch]
         reference = torch.index_select(doc, 0, gold_sents_indices[batch])
         #print(reference)
-        ref = reference.view(-1);
+        ref = reference.view(-1)
 
         #reference = reference.view(-1).tolist() # Flatten out sentences into one list
         mask = torch.tensor([0 if x ==vocab['<pad>'] else 1 for x in ref.tolist()], device=device)
