@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import List, Tuple, Dict, Set, Union
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
-from models.model_embeddings import *
+from modules.model_embeddings import *
 '''
 does not look like vocab is explicitly used
 

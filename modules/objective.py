@@ -1,7 +1,7 @@
 import torch
 import pickle
-from models.vocab import Vocab
-from models.rouge_calc import rouge_1, rouge_2, rouge_3, rouge_n
+from modules.vocab import Vocab
+from modules.rouge_calc import rouge_1, rouge_2, rouge_3, rouge_n
 
 # Objective function
 # TODO:
@@ -93,9 +93,9 @@ def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device):
         ref = reference.view(-1);
 
         #reference = reference.view(-1).tolist() # Flatten out sentences into one list
-        mask = torch.tensor([0 if x ==vocab['<pad>'] else 1 for x in ref.tolist()]).cuda();
-        ref = ref*mask;
-        ref = ref[ref.nonzero()].view(-1);
+        mask = torch.tensor([0 if x ==vocab['<pad>'] else 1 for x in ref.tolist()], device=device)
+        ref = ref * mask
+        ref = ref[ref.nonzero()].view(-1)
         #print('new ref: ' +str(ref))
         #print(reference, vocab['<pad>'])
         #reference = list(filter(lambda x: x!=vocab['<pad>'], reference)) # Remove pad tokens
@@ -109,7 +109,13 @@ def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device):
             hypothesis = list(filter(lambda x: x!=vocab['<pad>'], hypothesis)) # Remove pad tokens
 
             # Use reference and hypothesis to calculate rouge score
-            r = rouge_1(hypothesis, reference, 0)
+            r = rouge_1(hypothesis, reference, 0.5)
+            # Try rouge_2 F1 score
+            '''
+            precision = rouge_2(hypothesis, reference, 0)
+            recall = rouge_2(hypothesis, reference, 1)
+            r = 2 / (1/precision + 1/recall)
+            '''
             r_list.append(r)
 
             '''
