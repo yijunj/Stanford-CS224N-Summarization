@@ -1,3 +1,6 @@
+import os, sys
+sys.path.insert(1, os.path.join(sys.path[0], '..')) # Add parent folder to system path
+
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import random
@@ -13,7 +16,7 @@ from modules.neusum_model import *
 ## outer list = sent
 ## outer outer = doc
 
-with open('./dataset/extraction_summaries_2_tiny.p', 'rb') as pickle_file:
+with open('../dataset/extraction_summaries_2_tiny.p', 'rb') as pickle_file:
     data = pickle.load(pickle_file)
 
 # orig_summaries = data[0]
@@ -21,7 +24,7 @@ with open('./dataset/extraction_summaries_2_tiny.p', 'rb') as pickle_file:
 documents = data[1]
 gold_sents_indices = torch.from_numpy(np.array(data[3])).long()
 
-vocab = Vocab.load('./dataset/newsroom_train_99844_vocab.json')
+vocab = Vocab.load('../dataset/newsroom_train_99844_vocab.json')
 
 num_docs = len(documents)
 print('Num of docs: %d' % num_docs)
@@ -54,8 +57,8 @@ optimizer = optim.Adam(neusum.parameters(), lr = 0.0005)
 
 if load_model:
     load_from_epoch = 1
-    neusum.load_state_dict(torch.load('./saved_models/epoch_' + str(load_from_epoch) + 'neusum.p'))
-    optimizer.load_state_dict(torch.load('./saved_models/epoch_' + str(load_from_epoch) + '_optimizer.optim'))
+    neusum.load_state_dict(torch.load('../saved_models/epoch_' + str(load_from_epoch) + 'neusum.p'))
+    optimizer.load_state_dict(torch.load('../saved_models/epoch_' + str(load_from_epoch) + '_optimizer.optim'))
 
 # neusum.zero_grad()
 
@@ -99,16 +102,16 @@ for epoch in range(num_epochs):
         print('Loss: %f' % epoch_loss_per_doc)
 
     if epoch % save_every_epoch == 0 or epoch == num_epochs - 1:
-        torch.save(neusum.state_dict(), './saved_models/epoch_' + str(epoch) + '_neusum.p' )
+        torch.save(neusum.state_dict(), '../saved_models/epoch_' + str(epoch) + '_neusum.p' )
         # torch.save(optimizer.state_dict(), '../saved_models/epoch_' + str(epoch) + '_optimizer.optim')
         print('------------')
         print('Model and optimizer saved')
 
         fig = plt.figure()
         plt.plot(loss_history)
-        fig.savefig('./saved_figures/loss_til_epoch_' + str(epoch) + '.png', dpi=fig.dpi)
+        fig.savefig('../saved_figures/loss_til_epoch_' + str(epoch) + '.png', dpi=fig.dpi)
         plt.close(fig)
         print('Loss figure saved')
 
-        with open('./loss.p', 'wb') as pickle_file:
+        with open('../loss.p', 'wb') as pickle_file:
             pickle.dump(loss_history, pickle_file)
