@@ -51,8 +51,8 @@ class NeuSum(nn.Module):
         self.batch_size, self.doc_len, self.src_len = input_tokens.size()
 
         # flatten the input_tokens to source_padded (src_len, batch_size*doc_len) ....
-        input_tokens = input_tokens.permute(0,2,1) # (2,0,1) = (src_len, batch_size, doc_len)
-        source_padded = input_tokens.contiguous().view(self.src_len, -1) # shape: (src_len, batch_size*doc_len)
+        input_tokens_permuted = input_tokens.permute(0,2,1) # (2,0,1) = (src_len, batch_size, doc_len)
+        source_padded = input_tokens_permuted.contiguous().view(self.src_len, -1) # shape: (src_len, batch_size*doc_len)
         # later just take every doc_len
         #print(source_padded.shape)
 
