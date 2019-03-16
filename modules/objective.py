@@ -1,7 +1,7 @@
 import torch
 import pickle
 from modules.vocab import Vocab
-from modules.rouge_calc import rouge_1, rouge_2, rouge_3, rouge_n
+from modules.rouge_calc import rouge_1, rouge_2, rouge_3, rouge_n, rouge_l
 
 # Objective function
 # TODO:
@@ -21,7 +21,7 @@ def pred_dist(sents_scores):
     logP = logP.permute(2,0,1);
     return P, logP;
 
-def label_dist(sents_scores, pred_sents_indices, gold_sents_indices, docs, vocab, device, temperature=20):
+def label_dist(sents_scores, pred_sents_indices, gold_sents_indices, docs, vocab, device, rouge_num, temperature=20):
     """
     @param sents_scores (Tensor): sentence scores of every time step
         Shape (batch_size, T, doc_len) where T=3 is the total number of time steps
@@ -51,13 +51,13 @@ def label_dist(sents_scores, pred_sents_indices, gold_sents_indices, docs, vocab
         t_pred_sents_indices = torch.cat(t_pred_sents_indices, dim = 0).contiguous().view(batch_size, doc_len, t+1) # Shape (batch_size, doc_len, t+1)
         #print(t_pred_sents_indices)
 
-        rouge_t = rouge(t_pred_sents_indices, gold_sents_indices, docs, vocab, device) # Rouge scores of shape (batch_size, doc_len)
+        rouge_t = rouge(t_pred_sents_indices, gold_sents_indices, docs, vocab, device, rouge_num) # Rouge scores of shape (batch_size, doc_len)
 
         # print('t_pred_sents_indices is', t_pred_sents_indices)
         # print('gold_sents_indices is', gold_sents_indices)
 
         if t > 0:
-            rouge_tminus1 = rouge(tminus1_pred_sents_indices.view(batch_size, 1, t), gold_sents_indices, docs, vocab, device) # Rouge scores of shape (batch_size, 1)
+            rouge_tminus1 = rouge(tminus1_pred_sents_indices.view(batch_size, 1, t), gold_sents_indices, docs, vocab, device, rouge_num) # Rouge scores of shape (batch_size, 1)
             g = rouge_t - rouge_tminus1 # Rouge score differences of shape (batch_size, doc_len)
         else:
             g = rouge_t
@@ -73,7 +73,7 @@ def label_dist(sents_scores, pred_sents_indices, gold_sents_indices, docs, vocab
     Q = Q.permute(2,1,0) # Shape (doc_len, batch_size, T)
     return Q
 
-def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device):
+def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device, rouge_num):
     """
     @param pred_sents_indices (Tensor): predicted sentence indices
         Shape (batch_size, num_choices_of_summary, pred_summary_len)
@@ -109,13 +109,15 @@ def rouge(pred_sents_indices, gold_sents_indices, docs, vocab, device):
             hypothesis = list(filter(lambda x: x!=vocab['<pad>'], hypothesis)) # Remove pad tokens
 
             # Use reference and hypothesis to calculate rouge score
-            r = rouge_1(hypothesis, reference, 0.5)
+            # r = rouge_1(hypothesis, reference, 0.5)
             # Try rouge_2 F1 score
-            '''
-            precision = rouge_2(hypothesis, reference, 0)
-            recall = rouge_2(hypothesis, reference, 1)
-            r = 2 / (1/precision + 1/recall)
-            '''
+            precision = rouge_n(hypothesis, reference, rouge_num, 0)
+            recall = rouge_n(hypothesis, reference, rouge_num, 1)
+            if precision > 0 and recall > 0:
+                r = 2 / (1/precision + 1/recall)
+            else:
+                r = 0.0 # Do not just use 0, need a float type
+
             r_list.append(r)
 
             '''
@@ -136,7 +138,7 @@ def KL(P, Q):
 
     return torch.nn.KLDivLoss(reduction='sum')(P, Q)
 
-def neusum_loss(sents_scores, pred_sents_indices, gold_sents_indices, doc_indices, vocab, device):
+def neusum_loss(sents_scores, pred_sents_indices, gold_sents_indices, doc_indices, vocab, device, rouge_num=1):
     '''
     :param sents_scores: output of neusum.forward()
     :param pred_sents_indices: output of neusum.forward()
@@ -145,6 +147,6 @@ def neusum_loss(sents_scores, pred_sents_indices, gold_sents_indices, doc_indice
     :return:
     '''
     P, logP = pred_dist(sents_scores)
-    Q = label_dist(sents_scores, pred_sents_indices, gold_sents_indices, doc_indices, vocab, device)
+    Q = label_dist(sents_scores, pred_sents_indices, gold_sents_indices, doc_indices, vocab, device, rouge_num)
     loss = KL(logP, Q)
     return loss, (logP, P, Q)
