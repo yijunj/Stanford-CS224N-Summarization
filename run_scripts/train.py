@@ -9,6 +9,11 @@ import numpy as np
 from modules.objective import *
 from modules.neusum_model import *
 
+## ============================== DEVICE SELECTION ============================== ##
+
+device = torch.device('cpu')
+# device = torch.device('cuda:0')
+
 ## ============================== LOAD PROCESSED DATA ============================== ##
 ## docs should have the form:
 ## (List[List[List[str]]])
@@ -22,7 +27,7 @@ with open('../dataset/extraction_summaries_2_tiny.p', 'rb') as pickle_file:
 # orig_summaries = data[0]
 # ext_summaries = data[2]
 documents = data[1]
-gold_sents_indices = torch.from_numpy(np.array(data[3])).long()
+gold_sents_indices = torch.tensor(data[3], device=device)
 
 vocab = Vocab.load('../dataset/newsroom_train_99844_vocab.json')
 
@@ -38,8 +43,6 @@ extract_hidden_size = 5 #256
 
 ## ============================== TRAIN PARAMETER SPECIFICATIONS ============================== ##
 
-device = torch.device('cpu')
-# device = torch.device('cuda:0')
 batch_size = 5
 num_epochs = 10000
 print_every_epoch = 10
@@ -78,7 +81,7 @@ for epoch in range(num_epochs):
     for batch in range(num_batches):
         data_indices_batch = data_indices_list[batch*batch_size : (batch+1)*batch_size]
         docs_batch = [documents[i] for i in data_indices_batch]
-        gold_sent_indices_batch = torch.index_select(gold_sents_indices, 0, torch.from_numpy(data_indices_batch).long())
+        gold_sent_indices_batch = torch.index_select(gold_sents_indices, 0, torch.tensor(data_indices_batch, device=device))
 
         # docs_batch = documents[batch*batch_size : (batch+1)*batch_size]
         # gold_sent_indices_batch = gold_sents_indices[batch*batch_size:(batch+1)*batch_size, :]
