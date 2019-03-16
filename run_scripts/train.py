@@ -1,154 +1,114 @@
-import sys
-sys.path.append('/Users/yiliu/Desktop/CS224N/final_project/scripts')
-
 import torch.optim as optim
 import matplotlib.pyplot as plt
-#from torchtext.datasets import TranslationDataset, Multi30k
-from torchtext.data import Field, BucketIterator
 import random
 import time
 import numpy as np
-from models.objective import *
-from models.NeuSum_model import *
+from modules.objective import *
+from modules.neusum_model import *
 
-## ================================= LOAD PROCESSED DATA ====================================== ##
+## ============================== LOAD PROCESSED DATA ============================== ##
 ## docs should have the form:
-# #(List[List[List[str]]])
-#inner list = word
-#outer list = sent
-#outer outer = doc
+## (List[List[List[str]]])
+## inner list = word
+## outer list = sent
+## outer outer = doc
 
-
-# # Test with toy dataset
-# with open('../dataset/newsroom_train_10_word_lvl.p', 'rb') as pickle_file:
-#     data = pickle.load(pickle_file)
-# summaries = data[0]
-# documents = data[1]
-# print(summaries)
-# print(documents)
-
-with open('../dataset/extraction_dataset_491.p', 'rb') as pickle_file:
+with open('./dataset/extraction_summaries_2_tiny.p', 'rb') as pickle_file:
     data = pickle.load(pickle_file)
 
-orig_summaries = data[0]
-ext_summaries = data[2]
+# orig_summaries = data[0]
+# ext_summaries = data[2]
 documents = data[1]
-# print(np.array(data[-1]))
-gold_sents_indices = torch.from_numpy(np.array(data[-1])).long()
-print(gold_sents_indices.shape)
-# print(summaries)
-# print(documents)
-#print(documents[0])
+gold_sents_indices = torch.from_numpy(np.array(data[3])).long()
 
-vocab = Vocab.load('../dataset/newsroom_train_99844_vocab.json')
-
-device = torch.device('cpu')
-#device = torch.device('cuda:0')
-
-# print('use device: %s' % device, file=sys.stderr)
-
-## doc indices...for each document, put out the indices for word2vec of every sentence.
-doc_indices = vocab.to_input_tensor(documents, device)
-# print(doc_indices)
-print('number of docs: %d' % len(documents))
-
-batch_size, doc_len, _ = doc_indices.size()
-print('batch_size: %d, doc_len: %d' %(batch_size, doc_len))
-# gold_sents_indices = torch.tensor([[0,1], [0,1]], device=device)
-# # gold_sents_indices = torch.tensor([[0,1,2], [2,0,1]], device=device)
-# gold_ind = [random.sample(range(5), 3) for i in range(10)]
-# gold_sents_indices = torch.tensor(gold_ind, device = device)
+vocab = Vocab.load('./dataset/newsroom_train_99844_vocab.json')
 
 num_docs = len(documents)
+print('Num of docs: %d' % num_docs)
 
-## =============================== NET PARAMETER SPECIFICATIONS ==============================================##
-word_embed_size = 30 # 50
+## ============================== NET PARAMETER SPECIFICATIONS ============================== ##
+
+word_embed_size = 30 # 50 (parameter from the paper)
 hidden_size = 5 # 256
 sent_hidden_size = 5 #256
-extract_hidden_size = 5#256
+extract_hidden_size = 5 #256
 
-n_epochs = 2
-print_every_iter = 1
+## ============================== TRAIN PARAMETER SPECIFICATIONS ============================== ##
+
+device = torch.device('cpu')
+# device = torch.device('cuda:0')
+batch_size = 5
+num_epochs = 10000
+print_every_epoch = 10
+save_every_epoch = 100
 load_model = False
 
-Nsum=NeuSum(word_embed_size, hidden_size, sent_hidden_size, extract_hidden_size, vocab, device, \
-            sent_dropout_rate=0.0, doc_dropout_rate=0.0, max_t_step = 3, attn_size = 30)
-Nsum.train()
-Nsum = Nsum.to(device)
+## ============================== SOME SETTINGS BEFORE TRAINING ============================== ##
 
-optimizer = optim.Adam(Nsum.parameters(), lr = 0.0005)
+neusum = NeuSum(word_embed_size, hidden_size, sent_hidden_size, extract_hidden_size, vocab, device,
+    sent_dropout_rate=0.0, doc_dropout_rate=0.0, max_t_step=3, attn_size=30)
+neusum.train()
+neusum = neusum.to(device)
+
+optimizer = optim.Adam(neusum.parameters(), lr = 0.0005)
 
 if load_model:
-    Nsum.load_state_dict(torch.load('../saved_models/epoch_1_neusum.p'))
-    optimizer.load_state_dict(torch.load('../saved_models/epoch_1_optimizer.optim'))
-    # for param_tensor in Nsum.state_dict():
-    #     print(param_tensor, "\t", Nsum.state_dict()[param_tensor][0])
-    # print(optimizer.state_dict()['param_groups'])
+    load_from_epoch = 1
+    neusum.load_state_dict(torch.load('./saved_models/epoch_' + str(load_from_epoch) + 'neusum.p'))
+    optimizer.load_state_dict(torch.load('./saved_models/epoch_' + str(load_from_epoch) + '_optimizer.optim'))
 
-## ===========================BENCHMARK: LOSS OF GOLDEN SUMMARY================================================
-# sent_scores, score_select_indices = Nsum.forward(summaries);
-# loss, (logP, P, Q) = neusum_loss(sent_scores, score_select_indices, gold_sents_indices, doc_indices, vocab, device);
-# print('gold loss: '+str(loss))
-## ============================TRAINING PARAMETERS =====================================
-# Nsum.zero_grad()
-## ====================== ACTUAL TRAINING LOOP ====================================
+# neusum.zero_grad()
+
+## ============================== START TRAINING LOOP ============================== ##
 
 loss_history = []
+num_batches = num_docs // batch_size
+
+data_indices_list = np.arange(num_docs)
 
 tic = time.time()
-batch_size = 20
-print(len(documents))
-num_batches = len(documents)//batch_size
-print(num_batches)
-for iter in range(n_epochs):
+for epoch in range(num_epochs):
     epoch_loss = 0
-    for n in range(num_batches):
-        doc_batch = documents[n*(batch_size):(n+1)*batch_size];
-        gold_inds_batch = gold_sents_indices[n*(batch_size):(n+1)*batch_size,:]
+    np.random.shuffle(data_indices_list) # Randomly shuffle data
+
+    for batch in range(num_batches):
+        data_indices_batch = data_indices_list[batch*batch_size : (batch+1)*batch_size]
+        docs_batch = [documents[i] for i in data_indices_batch]
+        gold_sent_indices_batch = torch.index_select(gold_sents_indices, 0, torch.from_numpy(data_indices_batch).long())
+
+        # docs_batch = documents[batch*batch_size : (batch+1)*batch_size]
+        # gold_sent_indices_batch = gold_sents_indices[batch*batch_size:(batch+1)*batch_size, :]
+
         optimizer.zero_grad()
-        sent_scores, sent_select_indices = Nsum.forward(doc_batch)
+        select_sent_scores_batch, select_sent_indices_batch, doc_tokens_batch = neusum.forward(docs_batch)
 
-        #print(sent_scores.shape, score_select_indices.shape)
-        #print('sent scores: '+str(sent_scores))          # has gradient
-
-        ## ================= test sent scores ===================##
-        # print('output sent scores: '+str(sent_scores)+' shape: '+str(sent_scores.shape)) ## should sent scores every be negative?
-        ## =====================================================
-
-        loss, (logP,P,Q) = neusum_loss(sent_scores, sent_select_indices, gold_inds_batch, doc_indices, vocab, device)
-        epoch_loss+=loss
-        loss_history.append(loss)
+        loss, _ = neusum_loss(select_sent_scores_batch, select_sent_indices_batch, gold_sent_indices_batch, doc_tokens_batch, vocab, device)
+        epoch_loss += loss
 
         loss.backward()
         optimizer.step()
-    if iter % print_every_iter == 0 or iter == n_epochs - 1:
+
+    epoch_loss_per_doc = epoch_loss / batch_size / num_batches
+    loss_history.append(epoch_loss_per_doc)
+
+    if epoch % print_every_epoch == 0 or epoch == num_epochs - 1:
         toc = time.time()
-        print('============Epoch ', iter, '=============')
-        print('Time: ', toc - tic)
-        print('epoch_loss: %d'% epoch_loss)
-        torch.save(Nsum.state_dict(), '../saved_models/epoch_'+str(iter)+'_neusum.p' )
-        torch.save(optimizer.state_dict(), '../saved_models/epoch_'+str(iter)+'_optimizer.optim')
+        print('')
+        print('============ Epoch %d ============' % epoch)
+        print('Time: %f s' % (toc - tic))
+        print('Loss: %f' % epoch_loss_per_doc)
+
+    if epoch % save_every_epoch == 0 or epoch == num_epochs - 1:
+        torch.save(neusum.state_dict(), './saved_models/epoch_' + str(epoch) + '_neusum.p' )
+        # torch.save(optimizer.state_dict(), '../saved_models/epoch_' + str(epoch) + '_optimizer.optim')
+        print('------------')
         print('Model and optimizer saved')
-        # for param_tensor in Nsum.state_dict():
-        #     print(param_tensor, "\t", Nsum.state_dict()[param_tensor][0])
-        # print(optimizer.state_dict()['param_groups'])
 
-'''
-for i in range(5):
-    print('=============Document ', i, '===============')
-    print('selected indices is', sent_select_indices[i].tolist())
-    print('gold indices is', gold_sents_indices[i].tolist())
-    print('selected scores is', sent_scores[i].tolist())
-'''
+        fig = plt.figure()
+        plt.plot(loss_history)
+        fig.savefig('./saved_figures/loss_til_epoch_' + str(epoch) + '.png', dpi=fig.dpi)
+        plt.close(fig)
+        print('Loss figure saved')
 
-## ============================== removable tests for KL div ===================================##
-kldiv = torch.nn.KLDivLoss(reduction = 'sum')
-#print(kldiv(P,Q))
-
-
-## ============================ POST TRAINING ==============================================##
-
-# torch.save(Nsum.state_dict(), 'neusum.pth')
-
-plt.plot(loss_history)
-plt.show()
+        with open('./loss.p', 'wb') as pickle_file:
+            pickle.dump(loss_history, pickle_file)
